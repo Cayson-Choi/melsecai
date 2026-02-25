@@ -19,7 +19,7 @@ _DEFAULTS = {
     "language": "ko",
     "default_cpu": "Q03UDE",
     "default_project_type": "simple",
-    "output_dir": r"D:\melsecai\melseccode",
+    "output_dir": r"D:\Antigravity\melsecai\melseccode",
     "encoding": "shift-jis",
     "after_import": {"auto_convert": True, "focus_ladder": True},
     "timeouts": {"launch": 10, "dialog": 5, "import_wait": 10},

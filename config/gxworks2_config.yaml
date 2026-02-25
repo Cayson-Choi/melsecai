@@ -13,7 +13,7 @@ gxworks2:
   default_project_type: "simple"
 
   # 텍스트 파일 출력 디렉토리
-  output_dir: "D:\\melsecai\\melseccode"
+  output_dir: "D:\\Antigravity\\melsecai\\melseccode"
 
   # 텍스트 파일 인코딩
   encoding: "shift-jis"
