@@ -9,11 +9,12 @@ from fastmcp import FastMCP
 from melsec_ladder_mcp.tools.analyzer import analyze_timing_diagram as _analyze
 from melsec_ladder_mcp.tools.generator import generate_ladder as _generate
 from melsec_ladder_mcp.tools.exporter import export_gxworks2 as _export
+from melsec_ladder_mcp.tools.importer import import_to_gxworks2 as _import
 from melsec_ladder_mcp.tools.renderer import render_ladder_diagram as _render
 
 mcp = FastMCP(
     name="melsec-ladder-mcp",
-    instructions="타이밍도 기반 MELSEC-Q 래더 프로그램 자동 생성기",
+    instructions="타이밍도 기반 MELSEC-Q 래더 프로그램 자동 생성 + GX Works2 자동 Import",
 )
 
 
@@ -69,18 +70,53 @@ def export_gxworks2(
     ladder: dict,
     project_type: str = "simple",
     encoding: str = "shift-jis",
+    output_path: str | None = None,
 ) -> dict:
-    """래더 로직을 GX Works2 텍스트 Import 형식으로 출력합니다.
+    """래더 로직을 GX Works2 텍스트 파일로 저장합니다.
+
+    IL 프로그램을 텍스트 파일로 저장하고 디바이스 코멘트 CSV도 함께 생성합니다.
+    기본 저장 경로: D:\\melsecai\\melseccode\\code.txt
 
     Args:
         ladder: 래더 프로그램 JSON (generate_ladder 출력)
         project_type: 프로젝트 타입 (simple/structured)
         encoding: 출력 인코딩 (shift-jis/utf-8)
+        output_path: 저장 경로 (None이면 기본 경로 사용)
 
     Returns:
-        program_text (IL 프로그램), device_comments_csv, warnings
+        program_text (IL 프로그램), file_path (저장 경로), device_comments_csv, warnings
     """
-    return _export(ladder, project_type, encoding)
+    return _export(ladder, project_type, encoding, output_path)
+
+
+@mcp.tool()
+def import_to_gxworks2(
+    file_path: str,
+    auto_open: bool = True,
+    cpu_type: str | None = None,
+    project_type: str | None = None,
+    gxworks2_language: str | None = None,
+    gxworks2_path: str | None = None,
+) -> dict:
+    """생성된 텍스트 파일을 GX Works2에 자동 Import하고 래더 화면을 표시합니다.
+
+    pywinauto를 사용하여 GX Works2를 자동 실행하고, 새 프로젝트를 생성한 후,
+    텍스트 파일을 Import하여 래더 편집 화면에 표시합니다.
+
+    자동 Import 실패 시 텍스트 파일 경로와 수동 Import 안내를 반환합니다.
+
+    Args:
+        file_path: 텍스트 파일 경로 (export_gxworks2에서 반환된 file_path)
+        auto_open: GX Works2 자동 실행 여부 (False면 수동 안내만 반환)
+        cpu_type: CPU 타입 (예: Q03UDE). None이면 config 기본값.
+        project_type: 프로젝트 타입 (simple/structured). None이면 config 기본값.
+        gxworks2_language: GX Works2 메뉴 언어 (ko/en/ja). None이면 config 기본값.
+        gxworks2_path: GX Works2 실행 파일 경로. None이면 자동 탐지.
+
+    Returns:
+        status (success/error/skipped), message, file_path, fallback (실패 시 수동 안내)
+    """
+    return _import(file_path, auto_open, cpu_type, project_type, gxworks2_language, gxworks2_path)
 
 
 @mcp.tool()

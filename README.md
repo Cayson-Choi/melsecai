@@ -1,10 +1,10 @@
 # melsec-ladder-mcp
 
-타이밍도 기반 MELSEC-Q 래더 프로그램 자동 생성 MCP 서버
+타이밍도 기반 MELSEC-Q 래더 프로그램 자동 생성 + GX Works2 자동 Import MCP 서버
 
 ## 개요
 
-타이밍도(Timing Diagram)에서 추출한 동작 조건을 입력받아 미쓰비시 MELSEC-Q 시리즈용 래더(Ladder) 프로그램을 자동 생성하고, **GX Works2에서 바로 Import 가능한 IL 텍스트 파일**로 출력합니다.
+타이밍도(Timing Diagram)에서 추출한 동작 조건을 입력받아 미쓰비시 MELSEC-Q 시리즈용 래더(Ladder) 프로그램을 자동 생성하고, **GX Works2에 자동으로 Import**하여 래더 편집 화면까지 원스톱으로 표시합니다.
 
 ### 대상 사용자
 
@@ -12,11 +12,40 @@
 - 전기기능사/산업기사 수험생
 - PLC 프로그래밍 학습자
 
-### 워크플로우
+### 전체 흐름
 
 ```
-타이밍도 이미지 → Claude 이미지 분석 → MCP 서버 → GX Works2 Import용 .txt
+1. 타이밍도 이미지 업로드 (또는 동작 조건 텍스트 입력)
+   "이 타이밍도를 래더로 만들어줘"
+        ↓ (이 아래는 전부 자동)
+2. Claude가 이미지 분석
+   → "PB1 누르면 RL 점등, 5초 후 GL, 10초 후 BZ, PB2로 정지"
+        ↓
+3. MCP 서버가 래더 로직 생성
+   → 디바이스 할당 (X0, Y0, T0 등)
+   → 니모닉 코드 생성 (LD X0 / OR M0 / ANI X1 / OUT M0...)
+        ↓
+4. 텍스트 파일 저장
+   → D:\melsecai\melseccode\code.txt
+        ↓
+5. GX Works2 자동 실행 + Import
+   → pywinauto가 GX Works2를 열고
+   → 새 프로젝트 생성하고
+   → 텍스트 파일을 자동으로 Import
+        ↓
+6. GX Works2에 래더가 떠있음 ✅
+        ↓
+7. 사용자는 래더 확인하고 시뮬레이션 돌리면 끝
 ```
+
+## 환경 요구사항
+
+| 항목 | 요구사항 |
+|------|----------|
+| OS | Windows 10/11 (64bit) |
+| GX Works2 | Version 1.98A 이상 |
+| Python | 3.11 이상 |
+| 디스플레이 | DPI 100% 권장 |
 
 ## 설치
 
@@ -45,13 +74,13 @@ uv run melsec-ladder-mcp
   "mcpServers": {
     "melsec-ladder-mcp": {
       "command": "uv",
-      "args": ["--directory", "/path/to/melsecai", "run", "melsec-ladder-mcp"]
+      "args": ["--directory", "D:/Antigravity/melsecai", "run", "melsec-ladder-mcp"]
     }
   }
 }
 ```
 
-## MCP Tools
+## MCP Tools (5종)
 
 ### 1. `analyze_timing_diagram`
 
@@ -78,32 +107,69 @@ uv run melsec-ladder-mcp
 }
 ```
 
-**출력:** 감지된 패턴 (self_hold, timer_delay, sequential, flicker, full_reset)
-
 ### 2. `generate_ladder`
 
 동작 조건으로부터 래더 프로그램(IR)을 생성합니다. 패턴 매칭 → 디바이스 자동 할당 → 래더 구축.
 
 ### 3. `export_gxworks2`
 
-래더 프로그램을 GX Works2 텍스트 Import 형식(IL)으로 변환합니다.
+래더 프로그램을 IL 텍스트 파일로 **디스크에 저장**합니다.
 
-**출력:**
+- 기본 저장 경로: `D:\melsecai\melseccode\code.txt`
+- 디바이스 코멘트 CSV도 함께 저장: `comments.csv`
+- 반환값에 `file_path` 포함 → `import_to_gxworks2`에서 사용
 
-- `program_text` — IL 명령어 텍스트
-- `device_comments_csv` — 디바이스 코멘트 CSV
+### 4. `import_to_gxworks2` *(신규)*
 
-### 4. `render_ladder_diagram`
+**pywinauto**를 사용하여 GX Works2를 자동 조작합니다.
+
+```
+1) GX Works2 실행 중 → 기존 창 활성화 / 미실행 → 자동 실행
+2) 새 프로젝트 생성 (CPU: Q03UDE, Simple Project)
+3) 메뉴: 프로젝트 → 읽어들이기 → 텍스트 파일
+4) 파일 선택 다이얼로그에서 code.txt 자동 입력
+5) Import 완료 → 래더 편집 화면 표시
+```
+
+**자동 Import 실패 시:** 텍스트 파일 경로 + 수동 Import 안내를 fallback으로 반환합니다.
+
+**메뉴 언어 지원:**
+
+| 언어 | 메뉴 경로 |
+|------|-----------|
+| 한국어 (`ko`) | 프로젝트 → 읽어들이기 → 텍스트 파일 |
+| 영어 (`en`) | Project → Read from file → Text file |
+| 일본어 (`ja`) | プロジェクト → 読出し → テキストファイル |
+
+### 5. `render_ladder_diagram`
 
 래더 프로그램을 텍스트 또는 SVG 다이어그램으로 시각화합니다.
 
-## MCP Resources
+## MCP Resources (3종)
 
 | URI | 설명 |
 |-----|------|
 | `melsec://device-list` | MELSEC-Q 디바이스 목록 및 범위 |
 | `melsec://instruction-set` | 지원 IL 명령어 목록 |
 | `melsec://patterns` | 지원 제어 패턴 목록 |
+
+## 설정
+
+`config/gxworks2_config.yaml`에서 GX Works2 환경을 설정합니다:
+
+```yaml
+gxworks2:
+  install_path: "C:\\Program Files (x86)\\MELSOFT\\GPPW2\\GD2.exe"
+  language: "ko"
+  default_cpu: "Q03UDE"
+  default_project_type: "simple"
+  output_dir: "D:\\melsecai\\melseccode"
+  encoding: "shift-jis"
+  timeouts:
+    launch: 10
+    dialog: 5
+    import_wait: 10
+```
 
 ## 지원 패턴
 
@@ -154,48 +220,11 @@ OUT Y2
 END
 ```
 
-## GX Works2 Import 방법
-
-1. GX Works2에서 새 프로젝트 생성 (QCPU, Simple Project)
-2. **프로젝트** → **읽기(R)** → **텍스트 파일에서 읽기** 선택
-3. 생성된 `.txt` 파일을 선택하여 Import
-4. 디바이스 코멘트는 별도 CSV 파일로 제공 — **도구** → **디바이스 코멘트 일괄 변경**에서 적용
-
-## 디바이스 주소 규칙
-
-| 디바이스 | 범위 | 주소 형식 | 용도 |
-|----------|------|-----------|------|
-| X | X0 ~ X37 | 8진수 | 입력 (푸시버튼, 센서) |
-| Y | Y0 ~ Y37 | 8진수 | 출력 (램프, 모터, 부저) |
-| M | M0 ~ M99 | 10진수 | 보조 릴레이 |
-| T | T0 ~ T99 | 10진수 | 타이머 (100ms 단위) |
-| C | C0 ~ C99 | 10진수 | 카운터 |
-| D | D0 ~ D99 | 10진수 | 데이터 레지스터 |
-
-### 타이머 K값 계산
-
-```
-0.5초 = K5    1초 = K10    5초 = K50    10초 = K100
-```
-
-## 지원 IL 명령어
-
-| 명령어 | 설명 | 예시 |
-|--------|------|------|
-| LD / LDI | a접점 / b접점 로드 | `LD X0`, `LDI X1` |
-| AND / ANI | 직렬 a접점 / b접점 | `AND M0`, `ANI X1` |
-| OR / ORI | 병렬 a접점 / b접점 | `OR M0`, `ORI X1` |
-| OUT | 코일 / 타이머 / 카운터 출력 | `OUT Y0`, `OUT T0 K50` |
-| SET / RST | 셋 / 리셋 | `SET Y0`, `RST M0` |
-| ORB / ANB | 병렬 / 직렬 블록 결합 | `ORB`, `ANB` |
-| MPS / MRD / MPP | 분기 스택 푸시 / 읽기 / 팝 | 복수 출력 분기 |
-| END | 프로그램 종료 | `END` |
-
 ## 프로젝트 구조
 
 ```
 src/melsec_ladder_mcp/
-├── server.py                  # FastMCP 서버 진입점 (4 Tools + 3 Resources)
+├── server.py                  # FastMCP 서버 진입점 (5 Tools + 3 Resources)
 ├── errors.py                  # 커스텀 예외 계층
 ├── models/                    # Pydantic 데이터 모델
 │   ├── timing.py              #   입력: TimingDescription, TimingAnalysis
@@ -207,7 +236,8 @@ src/melsec_ladder_mcp/
 ├── tools/                     # MCP 도구 구현
 │   ├── analyzer.py            #   analyze_timing_diagram
 │   ├── generator.py           #   generate_ladder
-│   ├── exporter.py            #   export_gxworks2
+│   ├── exporter.py            #   export_gxworks2 (파일 저장)
+│   ├── importer.py            #   import_to_gxworks2 (GX Works2 자동 Import)
 │   └── renderer.py            #   render_ladder_diagram
 ├── core/                      # 코어 엔진
 │   ├── devices.py             #   DeviceAllocator (옥탈 순차 할당)
@@ -221,8 +251,15 @@ src/melsec_ladder_mcp/
 │       ├── sequential.py      #     순차 제어 (복합)
 │       ├── full_reset.py      #     전체 리셋
 │       └── flicker.py         #     플리커 점멸
-└── formats/
-    └── gxworks2.py            # GX Works2 텍스트 + CSV 포맷터
+├── automation/                # GX Works2 UI 자동화
+│   ├── gxworks2_controller.py #   pywinauto 기반 컨트롤러
+│   ├── menu_paths.py          #   메뉴 경로 정의 (한/영/일)
+│   ├── dialog_handlers.py     #   다이얼로그 핸들러
+│   └── config.py              #   YAML 설정 로더
+├── formats/
+│   └── gxworks2.py            # GX Works2 텍스트 + CSV 포맷터
+config/
+└── gxworks2_config.yaml       # GX Works2 환경 설정
 ```
 
 ## 테스트
@@ -231,7 +268,7 @@ src/melsec_ladder_mcp/
 uv run pytest -v
 ```
 
-**85개 테스트** — 모델 검증, 옥탈 주소, 컴파일러(직렬/병렬/MPS), IL 검증, 패턴 매칭/생성, GX Works2 포맷, MCP 도구, E2E 파이프라인
+**97개 테스트** — 모델, 옥탈 주소, 컴파일러, IL 검증, 패턴, GX Works2 포맷, 파일 저장, Import 도구, E2E 파이프라인
 
 ## 라이선스
 

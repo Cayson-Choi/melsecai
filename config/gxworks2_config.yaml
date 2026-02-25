@@ -1,0 +1,30 @@
+# GX Works2 환경 설정
+gxworks2:
+  # 설치 경로 (자동 탐지 실패 시 수동 지정)
+  install_path: "C:\\Program Files (x86)\\MELSOFT\\GPPW2\\GD2.exe"
+
+  # 메뉴 언어 (ko: 한국어, en: 영어, ja: 일본어)
+  language: "ko"
+
+  # 기본 CPU 타입
+  default_cpu: "Q03UDE"
+
+  # 기본 프로젝트 타입 (simple / structured)
+  default_project_type: "simple"
+
+  # 텍스트 파일 출력 디렉토리
+  output_dir: "D:\\melsecai\\melseccode"
+
+  # 텍스트 파일 인코딩
+  encoding: "shift-jis"
+
+  # 자동 Import 후 동작
+  after_import:
+    auto_convert: true
+    focus_ladder: true
+
+  # 타임아웃 설정 (초)
+  timeouts:
+    launch: 10
+    dialog: 5
+    import_wait: 10
