@@ -1,0 +1,18 @@
+{
+  "description": "PB1을 누르면 RL이 점등되고 5초 후 GL이 점등되며, 10초 후 BZ가 동작한다. PB2를 누르면 모든 동작이 정지한다.",
+  "inputs": [
+    { "name": "PB1", "type": "push_button", "mode": "momentary", "comment": "시작 버튼" },
+    { "name": "PB2", "type": "push_button", "mode": "momentary", "comment": "정지 버튼" }
+  ],
+  "outputs": [
+    { "name": "RL", "type": "lamp", "comment": "적색 램프" },
+    { "name": "GL", "type": "lamp", "comment": "녹색 램프" },
+    { "name": "BZ", "type": "buzzer", "comment": "부저" }
+  ],
+  "sequences": [
+    { "trigger": "PB1", "action": "RL ON" },
+    { "trigger": "RL ON", "delay": 5, "action": "GL ON" },
+    { "trigger": "RL ON", "delay": 10, "action": "BZ ON" },
+    { "trigger": "PB2", "action": "ALL OFF" }
+  ]
+}
