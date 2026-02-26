@@ -1,0 +1,34 @@
+{
+  "description": "PB1을 누르면 운전등이 켜지고 물 분사가 5초간 동작한다. 물 분사 종료 후 비누 분사 3초, 상부 브러시 8초, 측면 브러시 6초, 하부 세차 5초, 헹굼 5초, 왁스 코팅 4초, 송풍 건조 10초 순서로 동작한다. 완료 후 부저가 0.5초 간격으로 점멸하고 완료등이 켜진다. PB2를 누르면 정지.",
+  "inputs": [
+    { "name": "PB1", "type": "push_button", "mode": "momentary" },
+    { "name": "PB2", "type": "push_button", "mode": "momentary" }
+  ],
+  "outputs": [
+    { "name": "RL", "type": "lamp" },
+    { "name": "WP", "type": "pump" },
+    { "name": "SP", "type": "pump" },
+    { "name": "TB", "type": "motor" },
+    { "name": "SB", "type": "motor" },
+    { "name": "UC", "type": "pump" },
+    { "name": "RP", "type": "pump" },
+    { "name": "WX", "type": "pump" },
+    { "name": "BL", "type": "motor" },
+    { "name": "BZ", "type": "buzzer" },
+    { "name": "GL", "type": "lamp" }
+  ],
+  "sequences": [
+    { "trigger": "PB1", "action": "RL ON" },
+    { "trigger": "PB1", "action": "WP ON" },
+    { "trigger": "WP ON", "delay": 5, "action": "SP ON" },
+    { "trigger": "SP ON", "delay": 3, "action": "TB ON" },
+    { "trigger": "TB ON", "delay": 8, "action": "SB ON" },
+    { "trigger": "SB ON", "delay": 6, "action": "UC ON" },
+    { "trigger": "UC ON", "delay": 5, "action": "RP ON" },
+    { "trigger": "RP ON", "delay": 5, "action": "WX ON" },
+    { "trigger": "WX ON", "delay": 4, "action": "BL ON" },
+    { "trigger": "BL ON", "delay": 10, "action": "BZ FLICKER" },
+    { "trigger": "BL ON", "delay": 10, "action": "GL ON" },
+    { "trigger": "PB2", "action": "ALL OFF" }
+  ]
+}
