@@ -5,6 +5,8 @@ description = "타이밍도 기반 MELSEC-Q 래더 프로그램 자동 생성 MC
 requires-python = ">=3.11"
 dependencies = [
     "fastmcp>=2.0",
+    "olefile>=0.47",
+    "pillow>=12.1.1",
     "pydantic>=2.6",
     "pywinauto>=0.6.8",
     "pyyaml>=6.0",

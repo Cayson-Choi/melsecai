@@ -71,22 +71,24 @@ def export_gxworks2(
     project_type: str = "simple",
     encoding: str = "shift-jis",
     output_path: str | None = None,
+    output_format: str = "gxw",
 ) -> dict:
-    """래더 로직을 GX Works2 텍스트 파일로 저장합니다.
+    """래더 로직을 GX Works2 파일로 저장합니다.
 
-    IL 프로그램을 텍스트 파일로 저장하고 디바이스 코멘트 CSV도 함께 생성합니다.
-    기본 저장 경로: D:\\melsecai\\melseccode\\code.txt
+    output_format="gxw"이면 GX Works2에서 바로 열 수 있는 .gxw 프로젝트 파일을 생성합니다.
+    output_format="text"이면 기존 IL 텍스트 파일을 생성합니다.
 
     Args:
         ladder: 래더 프로그램 JSON (generate_ladder 출력)
         project_type: 프로젝트 타입 (simple/structured)
-        encoding: 출력 인코딩 (shift-jis/utf-8)
+        encoding: 출력 인코딩 (shift-jis/utf-8) — text 포맷에서만 사용
         output_path: 저장 경로 (None이면 기본 경로 사용)
+        output_format: 출력 포맷 ("gxw" = 바이너리 프로젝트, "text" = IL 텍스트)
 
     Returns:
-        program_text (IL 프로그램), file_path (저장 경로), device_comments_csv, warnings
+        program_text (IL 프로그램), file_path (저장 경로), output_format, warnings
     """
-    return _export(ladder, project_type, encoding, output_path)
+    return _export(ladder, project_type, encoding, output_path, output_format)
 
 
 @mcp.tool()

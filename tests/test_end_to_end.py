@@ -64,7 +64,7 @@ class TestPractice11Pipeline:
 
     def test_device_comments_csv(self, practice_11_input):
         ladder = generate_ladder(**practice_11_input)
-        export = export_gxworks2(ladder)
+        export = export_gxworks2(ladder, output_format="text")
         csv = export["device_comments_csv"]
         assert "X0" in csv
         assert "X1" in csv

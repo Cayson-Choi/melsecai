@@ -7,3 +7,18 @@ build/
 .env
 .pytest_cache/
 *.egg
+
+# Generated output files
+melseccode/*.gxw
+melseccode/*.csv
+melseccode/*.png
+melseccode/examplegxw/
+
+# Analysis/debug scripts
+hash_analysis.py
+
+# Large reference docs
+melsec-q-programming-manual/
+
+# Claude local settings
+.claude/

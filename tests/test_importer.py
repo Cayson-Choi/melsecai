@@ -90,7 +90,7 @@ class TestExporterFileSave:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             out_path = os.path.join(tmpdir, "test_code.txt")
-            result = export_gxworks2(ladder, output_path=out_path)
+            result = export_gxworks2(ladder, output_path=out_path, output_format="text")
 
             assert result["file_path"] == out_path
             assert os.path.isfile(out_path)
@@ -108,7 +108,7 @@ class TestExporterFileSave:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             out_path = os.path.join(tmpdir, "test_code.txt")
-            result = export_gxworks2(ladder, output_path=out_path)
+            result = export_gxworks2(ladder, output_path=out_path, output_format="text")
 
             comments_path = result["comments_file_path"]
             assert comments_path is not None

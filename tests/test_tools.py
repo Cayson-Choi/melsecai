@@ -63,7 +63,7 @@ class TestExporter:
 
     def test_has_device_comments(self, practice_11_input):
         ladder = generate_ladder(**practice_11_input)
-        result = export_gxworks2(ladder)
+        result = export_gxworks2(ladder, output_format="text")
         assert result["device_comments_csv"] != ""
 
 
