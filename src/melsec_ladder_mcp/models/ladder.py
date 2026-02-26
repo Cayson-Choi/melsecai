@@ -53,12 +53,20 @@ class SetResetElement(BaseModel):
     device: str
 
 
+class ApplicationElement(BaseModel):
+    """응용명령어 출력 요소 (MOV, +, -, INC, DEC, CMP, BCD, BIN 등)."""
+
+    type: Literal["application"] = "application"
+    instruction: str = Field(..., description="명령어 (예: MOV, +, -, INC)")
+    operands: list[str] = Field(..., description="오퍼랜드 (예: ['K100', 'D0'])")
+
+
 # Input elements for the rung's input section
 InputElement = ContactElement
 
 # Output elements for the rung's output section
 OutputElement = Annotated[
-    Union[CoilElement, TimerElement, CounterElement, SetResetElement],
+    Union[CoilElement, TimerElement, CounterElement, SetResetElement, ApplicationElement],
     Field(discriminator="type"),
 ]
 

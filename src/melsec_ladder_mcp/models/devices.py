@@ -86,6 +86,13 @@ class TimerConfig(BaseModel):
         return cls(k_value=k_value, seconds=seconds, comment=comment)
 
 
+class CounterConfig(BaseModel):
+    """Counter configuration."""
+
+    k_value: int = Field(..., gt=0, description="카운트 목표값")
+    comment: str = Field(default="")
+
+
 class DeviceAllocation(BaseModel):
     """A single device allocation mapping."""
 
@@ -93,6 +100,7 @@ class DeviceAllocation(BaseModel):
     address: DeviceAddress
     comment: str = Field(default="")
     timer_config: TimerConfig | None = Field(default=None)
+    counter_config: CounterConfig | None = Field(default=None)
 
 
 class DeviceMap(BaseModel):

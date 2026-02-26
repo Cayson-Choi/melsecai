@@ -25,6 +25,7 @@ class OutputType(str, Enum):
     BUZZER = "buzzer"
     SOLENOID = "solenoid"
     RELAY = "relay"
+    PUMP = "pump"
 
 
 class InputDevice(BaseModel):

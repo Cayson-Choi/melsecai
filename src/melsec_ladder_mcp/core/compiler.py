@@ -9,6 +9,7 @@ from melsec_ladder_mcp.models.instructions import (
     InstructionType,
 )
 from melsec_ladder_mcp.models.ladder import (
+    ApplicationElement,
     CoilElement,
     ContactElement,
     ContactMode,
@@ -169,7 +170,8 @@ class LadderCompiler:
         return instructions
 
     def _compile_output(
-        self, output: CoilElement | TimerElement | CounterElement | SetResetElement
+        self,
+        output: CoilElement | TimerElement | CounterElement | SetResetElement | ApplicationElement,
     ) -> list[Instruction]:
         """Compile an output element."""
         if isinstance(output, CoilElement):
@@ -195,5 +197,12 @@ class LadderCompiler:
                 return [Instruction(instruction=InstructionType.SET, device=output.device)]
             else:
                 return [Instruction(instruction=InstructionType.RST, device=output.device)]
+        elif isinstance(output, ApplicationElement):
+            return [
+                Instruction(
+                    instruction=InstructionType(output.instruction),
+                    operands=output.operands,
+                )
+            ]
         else:
             raise CompilerError(f"Unknown output element type: {type(output)}")

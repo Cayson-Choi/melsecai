@@ -23,6 +23,19 @@ class InstructionType(str, Enum):
     MRD = "MRD"
     MPP = "MPP"
     END = "END"
+    # Application instructions
+    MOV = "MOV"
+    DMOV = "DMOV"
+    ADD = "+"
+    SUB = "-"
+    MUL = "*"
+    DIV = "/"
+    INC = "INC"
+    DEC = "DEC"
+    CMP = "CMP"
+    BCD = "BCD"
+    BIN_INST = "BIN"
+    SMOV = "$MOV"
 
 
 class Instruction(BaseModel):
@@ -31,14 +44,17 @@ class Instruction(BaseModel):
     instruction: InstructionType
     device: str | None = Field(default=None, description="디바이스 (예: X0, M0, T0)")
     k_value: int | None = Field(default=None, description="K값 (타이머/카운터)")
+    operands: list[str] | None = Field(default=None, description="응용명령어 다중 오퍼랜드")
 
     def to_text(self) -> str:
         """Convert to GX Works2 text format."""
         parts = [self.instruction.value]
-        if self.device is not None:
+        if self.operands:
+            parts.extend(self.operands)
+        elif self.device is not None:
             parts.append(self.device)
-        if self.k_value is not None:
-            parts.append(f"K{self.k_value}")
+            if self.k_value is not None:
+                parts.append(f"K{self.k_value}")
         return " ".join(parts)
 
 

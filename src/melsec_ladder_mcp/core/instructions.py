@@ -33,6 +33,38 @@ NO_OPERAND_INSTRUCTIONS = {
     InstructionType.END,
 }
 
+# Application instructions (use operands field instead of device)
+APPLICATION_INSTRUCTIONS = {
+    InstructionType.MOV,
+    InstructionType.DMOV,
+    InstructionType.ADD,
+    InstructionType.SUB,
+    InstructionType.MUL,
+    InstructionType.DIV,
+    InstructionType.INC,
+    InstructionType.DEC,
+    InstructionType.CMP,
+    InstructionType.BCD,
+    InstructionType.BIN_INST,
+    InstructionType.SMOV,
+}
+
+# Expected operand count per application instruction
+_APP_OPERAND_COUNTS: dict[InstructionType, int] = {
+    InstructionType.MOV: 2,
+    InstructionType.DMOV: 2,
+    InstructionType.BCD: 2,
+    InstructionType.BIN_INST: 2,
+    InstructionType.ADD: 3,
+    InstructionType.SUB: 3,
+    InstructionType.MUL: 3,
+    InstructionType.DIV: 3,
+    InstructionType.CMP: 3,
+    InstructionType.INC: 1,
+    InstructionType.DEC: 1,
+    InstructionType.SMOV: 2,
+}
+
 # Valid device types for contact instructions
 CONTACT_DEVICES = {DeviceType.X, DeviceType.Y, DeviceType.M, DeviceType.T, DeviceType.C}
 
@@ -95,7 +127,21 @@ class InstructionValidator:
         errors: list[str] = []
 
         for i, inst in enumerate(sequence.instructions):
-            if inst.instruction in DEVICE_INSTRUCTIONS:
+            if inst.instruction in APPLICATION_INSTRUCTIONS:
+                # Application instructions use operands field
+                if not inst.operands:
+                    errors.append(
+                        f"{inst.instruction.value} at position {i} requires operands"
+                    )
+                    continue
+                expected = _APP_OPERAND_COUNTS.get(inst.instruction)
+                if expected is not None and len(inst.operands) != expected:
+                    errors.append(
+                        f"{inst.instruction.value} at position {i} requires "
+                        f"{expected} operands, got {len(inst.operands)}"
+                    )
+
+            elif inst.instruction in DEVICE_INSTRUCTIONS:
                 if inst.device is None:
                     errors.append(
                         f"{inst.instruction.value} at position {i} requires a device"

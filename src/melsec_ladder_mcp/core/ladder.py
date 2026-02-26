@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from melsec_ladder_mcp.models.devices import DeviceMap
 from melsec_ladder_mcp.models.ladder import (
+    ApplicationElement,
     CoilElement,
     ContactElement,
     ContactMode,
@@ -77,6 +78,13 @@ class RungBuilder:
     def reset_output(self, device: str) -> RungBuilder:
         """Add a RST output."""
         self._output_elements.append(SetResetElement(type="reset", device=device))
+        return self
+
+    def application(self, instruction: str, operands: list[str]) -> RungBuilder:
+        """Add an application instruction output (MOV, +, -, INC, etc.)."""
+        self._output_elements.append(
+            ApplicationElement(instruction=instruction, operands=operands)
+        )
         return self
 
     def build(self) -> Rung:
@@ -197,6 +205,86 @@ class LadderBuilder:
                 ContactElement(device=contact_device, mode=ContactMode.NO),
             ]),
             output_section=[TimerElement(device=timer_device, k_value=k_value)],
+        )
+        self._rungs.append(rung)
+        self._rung_counter += 1
+        return self
+
+    def add_stage_gated_rung(
+        self,
+        enable_device: str,
+        gate_device: str,
+        output_device: str,
+        comment: str = "",
+    ) -> LadderBuilder:
+        """Add a stage-gated rung: LD enable / ANI gate / OUT output."""
+        rung = Rung(
+            number=self._rung_counter,
+            comment=comment or f"{enable_device} AND NOT {gate_device} → {output_device}",
+            input_section=SeriesConnection(elements=[
+                ContactElement(device=enable_device, mode=ContactMode.NO),
+                ContactElement(device=gate_device, mode=ContactMode.NC),
+            ]),
+            output_section=[CoilElement(device=output_device)],
+        )
+        self._rungs.append(rung)
+        self._rung_counter += 1
+        return self
+
+    def add_counter_rung(
+        self,
+        contact_device: str,
+        counter_device: str,
+        k_value: int,
+        comment: str = "",
+    ) -> LadderBuilder:
+        """Add a counter rung: LD contact / OUT Cn Kxx."""
+        rung = Rung(
+            number=self._rung_counter,
+            comment=comment or f"카운터 {counter_device} (K{k_value})",
+            input_section=SeriesConnection(elements=[
+                ContactElement(device=contact_device, mode=ContactMode.NO),
+            ]),
+            output_section=[CounterElement(device=counter_device, k_value=k_value)],
+        )
+        self._rungs.append(rung)
+        self._rung_counter += 1
+        return self
+
+    def add_counter_reset_rung(
+        self,
+        contact_device: str,
+        counter_device: str,
+        comment: str = "",
+    ) -> LadderBuilder:
+        """Add a counter reset rung: LD contact / RST Cn."""
+        rung = Rung(
+            number=self._rung_counter,
+            comment=comment or f"카운터 리셋 {counter_device}",
+            input_section=SeriesConnection(elements=[
+                ContactElement(device=contact_device, mode=ContactMode.NO),
+            ]),
+            output_section=[SetResetElement(type="reset", device=counter_device)],
+        )
+        self._rungs.append(rung)
+        self._rung_counter += 1
+        return self
+
+    def add_application_rung(
+        self,
+        contact_device: str,
+        instruction: str,
+        operands: list[str],
+        comment: str = "",
+    ) -> LadderBuilder:
+        """Add an application instruction rung: LD contact / MOV K100 D0."""
+        rung = Rung(
+            number=self._rung_counter,
+            comment=comment or f"{instruction} {' '.join(operands)}",
+            input_section=SeriesConnection(elements=[
+                ContactElement(device=contact_device, mode=ContactMode.NO),
+            ]),
+            output_section=[ApplicationElement(instruction=instruction, operands=operands)],
         )
         self._rungs.append(rung)
         self._rung_counter += 1

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from melsec_ladder_mcp.errors import DeviceConflictError, DeviceRangeError
 from melsec_ladder_mcp.models.devices import (
+    CounterConfig,
     DeviceAddress,
     DeviceAllocation,
     DeviceMap,
@@ -37,6 +38,7 @@ class DeviceAllocator:
         device_type: DeviceType,
         comment: str = "",
         timer_config: TimerConfig | None = None,
+        counter_config: CounterConfig | None = None,
         preferred_address: int | None = None,
     ) -> DeviceAllocation:
         """Allocate the next available address for a device type."""
@@ -81,6 +83,7 @@ class DeviceAllocator:
             address=device_address,
             comment=comment,
             timer_config=timer_config,
+            counter_config=counter_config,
         )
         self._allocations.append(allocation)
         return allocation
@@ -100,6 +103,14 @@ class DeviceAllocator:
         config = TimerConfig.from_seconds(seconds, comment=comment)
         return self.allocate(
             name, DeviceType.T, comment=comment, timer_config=config
+        )
+
+    def allocate_counter(
+        self, name: str, count: int, comment: str = ""
+    ) -> DeviceAllocation:
+        config = CounterConfig(k_value=count, comment=comment)
+        return self.allocate(
+            name, DeviceType.C, comment=comment, counter_config=config
         )
 
     def build_device_map(self) -> DeviceMap:

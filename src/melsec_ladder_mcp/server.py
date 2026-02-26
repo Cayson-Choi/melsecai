@@ -70,6 +70,8 @@ def export_gxworks2(
     ladder: dict,
     output_path: str | None = None,
     output_format: str = "gxw",
+    cpu_type: str | None = None,
+    series: str = "QCPU (Q mode)",
 ) -> dict:
     """래더 로직을 GX Works2 파일로 저장합니다.
 
@@ -80,17 +82,27 @@ def export_gxworks2(
         ladder: 래더 프로그램 JSON (generate_ladder 출력)
         output_path: 저장 경로 (None이면 기본 경로 사용)
         output_format: 출력 포맷 ("gxw" = .gxw 프로젝트, "csv" = CSV만)
+        cpu_type: CPU 타입 (e.g. "Q03UDE"). None이면 config 기본값 사용.
+        series: PLC 시리즈 (기본: "QCPU (Q mode)")
 
     Returns:
         program_text (IL 프로그램), file_path (저장 경로), output_format, warnings
     """
-    return _export(ladder, output_path=output_path, output_format=output_format)
+    return _export(
+        ladder,
+        output_path=output_path,
+        output_format=output_format,
+        cpu_type=cpu_type,
+        series=series,
+    )
 
 
 @mcp.tool()
 def import_to_gxworks2(
     file_path: str,
     auto_open: bool = True,
+    cpu_type: str | None = None,
+    series: str = "QCPU (Q mode)",
 ) -> dict:
     """생성된 파일을 GX Works2에 자동 Import하고 래더 화면을 표시합니다.
 
@@ -102,11 +114,13 @@ def import_to_gxworks2(
     Args:
         file_path: 파일 경로 (.gxw 또는 .csv, export_gxworks2에서 반환된 file_path)
         auto_open: GX Works2 자동 실행 여부 (False면 수동 안내만 반환)
+        cpu_type: CPU 타입 (e.g. "Q03UDE"). CSV import 시 새 프로젝트 생성에 사용.
+        series: PLC 시리즈 (기본: "QCPU (Q mode)")
 
     Returns:
         status (success/error/skipped), message, file_path, fallback (실패 시 수동 안내)
     """
-    return _import(file_path, auto_open)
+    return _import(file_path, auto_open, cpu_type=cpu_type, series=series)
 
 
 @mcp.tool()

@@ -16,6 +16,8 @@ def export_gxworks2(
     ladder: dict,
     output_path: str | None = None,
     output_format: str = "gxw",
+    cpu_type: str | None = None,
+    series: str = "QCPU (Q mode)",
     **_kwargs,
 ) -> dict:
     """Export ladder program to GX Works2 format and save to file.
@@ -24,6 +26,8 @@ def export_gxworks2(
         ladder: 래더 프로그램 JSON (generate_ladder 출력)
         output_path: 저장 경로 (None이면 config 기본 경로 사용)
         output_format: 출력 포맷 ("gxw" = .gxw 프로젝트, "csv" = CSV만)
+        cpu_type: CPU 타입 (e.g. "Q03UDE"). None이면 config 기본값 사용.
+        series: PLC 시리즈 (기본: "QCPU (Q mode)")
 
     Returns:
         내보내기 결과 (program_text, file_path, warnings 등)
@@ -33,12 +37,14 @@ def export_gxworks2(
     if output_format == "csv":
         return _export_csv(program, output_path)
     else:
-        return _export_gxw(program, output_path)
+        return _export_gxw(program, output_path, cpu_type=cpu_type, series=series)
 
 
 def _export_gxw(
     program: LadderProgram,
     output_path: str | None,
+    cpu_type: str | None = None,
+    series: str = "QCPU (Q mode)",
 ) -> dict:
     """Export as .gxw project via CSV import + UIA automation.
 
@@ -72,7 +78,7 @@ def _export_gxw(
         from melsec_ladder_mcp.automation.gxworks2_uia import GXWorks2UIA
 
         uia = GXWorks2UIA()
-        uia.build_gxw(csv_path, output_path)
+        uia.build_gxw(csv_path, output_path, cpu_type=cpu_type, series=series)
         logger.info(f"GXW project created via UIA: {output_path}")
     except ImportError:
         warnings.append(

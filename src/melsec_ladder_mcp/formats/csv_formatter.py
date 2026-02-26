@@ -27,6 +27,15 @@ _STEP_SIZES = {
 _TIMER_COUNTER_PREFIXES = ("T", "C")
 
 
+def _escape_csv_field(value: str) -> str:
+    """Escape a value for use inside a CSV double-quoted field.
+
+    Inner double-quotes are doubled per CSV standard (RFC 4180).
+    Example: "대기" → ""대기""
+    """
+    return value.replace('"', '""')
+
+
 def _is_timer_or_counter_out(inst: Instruction) -> bool:
     """Check if instruction is OUT T* or OUT C* (timer/counter output)."""
     if inst.instruction.value != "OUT":
@@ -34,10 +43,17 @@ def _is_timer_or_counter_out(inst: Instruction) -> bool:
     return inst.device is not None and inst.device[0] in _TIMER_COUNTER_PREFIXES
 
 
+def _is_application_instruction(inst: Instruction) -> bool:
+    """Check if instruction is an application instruction (has operands)."""
+    return inst.operands is not None and len(inst.operands) > 0
+
+
 def _step_size(inst: Instruction) -> int:
     """Return the number of steps an instruction occupies."""
     if _is_timer_or_counter_out(inst):
         return 4  # OUT T0 K50 = 4 steps
+    if _is_application_instruction(inst):
+        return len(inst.operands) + 1  # operands count + 1
     return _STEP_SIZES.get(inst.instruction.value, 1)
 
 
@@ -72,7 +88,20 @@ def instructions_to_csv(
         mnemonic = inst.instruction.value
         device = inst.device or ""
 
-        if _is_timer_or_counter_out(inst):
+        if _is_application_instruction(inst):
+            # Application instruction: multi-row output
+            # Row 1: step, "", "MOV", first_operand, "", "", ""
+            op0 = _escape_csv_field(inst.operands[0])
+            lines.append(
+                f'"{step}"\t""\t"{mnemonic}"\t"{op0}"\t""\t""\t""'
+            )
+            # Subsequent rows: "", "", "", operand, "", "", ""
+            for operand in inst.operands[1:]:
+                escaped = _escape_csv_field(operand)
+                lines.append(
+                    f'""\t""\t""\t"{escaped}"\t""\t""\t""'
+                )
+        elif _is_timer_or_counter_out(inst):
             # Timer/Counter OUT: two CSV rows
             # Row 1: step, "", "OUT", "T0", "", "", ""
             lines.append(

@@ -8,6 +8,8 @@ import os
 def import_to_gxworks2(
     file_path: str,
     auto_open: bool = True,
+    cpu_type: str | None = None,
+    series: str = "QCPU (Q mode)",
     **_kwargs,
 ) -> dict:
     """Import a generated file into GX Works2.
@@ -17,6 +19,8 @@ def import_to_gxworks2(
     Args:
         file_path: 파일 경로 (.gxw 또는 .csv)
         auto_open: GX Works2 자동 실행 여부 (False면 수동 안내만 반환)
+        cpu_type: CPU 타입 (e.g. "Q03UDE"). CSV import 시 새 프로젝트 생성에 사용.
+        series: PLC 시리즈 (기본: "QCPU (Q mode)")
 
     Returns:
         결과 dict (status, message, file_path, fallback 등)
@@ -35,7 +39,7 @@ def import_to_gxworks2(
 
     # .csv files: import via UIA automation
     if file_path.lower().endswith(".csv"):
-        return _import_csv(file_path, auto_open)
+        return _import_csv(file_path, auto_open, cpu_type=cpu_type, series=series)
 
     return {
         "status": "error",
@@ -76,7 +80,12 @@ def _open_gxw(file_path: str, auto_open: bool) -> dict:
         }
 
 
-def _import_csv(file_path: str, auto_open: bool) -> dict:
+def _import_csv(
+    file_path: str,
+    auto_open: bool,
+    cpu_type: str | None = None,
+    series: str = "QCPU (Q mode)",
+) -> dict:
     """Import a CSV file into GX Works2 via UIA automation."""
     if not auto_open:
         return {
@@ -93,7 +102,9 @@ def _import_csv(file_path: str, auto_open: bool) -> dict:
 
         output_path = file_path.rsplit(".", 1)[0] + ".gxw"
         uia = GXWorks2UIA()
-        uia.build_gxw(file_path, output_path)
+        uia.build_gxw(
+            file_path, output_path, cpu_type=cpu_type, series=series,
+        )
         return {
             "status": "success",
             "message": f"GX Works2에서 CSV를 Import하고 프로젝트를 저장했습니다: {output_path}",
