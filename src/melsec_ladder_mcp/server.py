@@ -68,57 +68,45 @@ def generate_ladder(
 @mcp.tool()
 def export_gxworks2(
     ladder: dict,
-    project_type: str = "simple",
-    encoding: str = "shift-jis",
     output_path: str | None = None,
     output_format: str = "gxw",
 ) -> dict:
     """래더 로직을 GX Works2 파일로 저장합니다.
 
-    output_format="gxw"이면 GX Works2에서 바로 열 수 있는 .gxw 프로젝트 파일을 생성합니다.
-    output_format="text"이면 기존 IL 텍스트 파일을 생성합니다.
+    output_format="gxw"이면 CSV를 생성하고 UIA 자동화로 .gxw 프로젝트 파일을 생성합니다.
+    output_format="csv"이면 CSV 파일만 생성합니다 (수동 Import용).
 
     Args:
         ladder: 래더 프로그램 JSON (generate_ladder 출력)
-        project_type: 프로젝트 타입 (simple/structured)
-        encoding: 출력 인코딩 (shift-jis/utf-8) — text 포맷에서만 사용
         output_path: 저장 경로 (None이면 기본 경로 사용)
-        output_format: 출력 포맷 ("gxw" = 바이너리 프로젝트, "text" = IL 텍스트)
+        output_format: 출력 포맷 ("gxw" = .gxw 프로젝트, "csv" = CSV만)
 
     Returns:
         program_text (IL 프로그램), file_path (저장 경로), output_format, warnings
     """
-    return _export(ladder, project_type, encoding, output_path, output_format)
+    return _export(ladder, output_path=output_path, output_format=output_format)
 
 
 @mcp.tool()
 def import_to_gxworks2(
     file_path: str,
     auto_open: bool = True,
-    cpu_type: str | None = None,
-    project_type: str | None = None,
-    gxworks2_language: str | None = None,
-    gxworks2_path: str | None = None,
 ) -> dict:
-    """생성된 텍스트 파일을 GX Works2에 자동 Import하고 래더 화면을 표시합니다.
+    """생성된 파일을 GX Works2에 자동 Import하고 래더 화면을 표시합니다.
 
-    pywinauto를 사용하여 GX Works2를 자동 실행하고, 새 프로젝트를 생성한 후,
-    텍스트 파일을 Import하여 래더 편집 화면에 표시합니다.
+    .gxw 파일은 os.startfile()로 직접 열고,
+    .csv 파일은 UIA 자동화로 GX Works2에 Import합니다.
 
-    자동 Import 실패 시 텍스트 파일 경로와 수동 Import 안내를 반환합니다.
+    자동 Import 실패 시 파일 경로와 수동 Import 안내를 반환합니다.
 
     Args:
-        file_path: 텍스트 파일 경로 (export_gxworks2에서 반환된 file_path)
+        file_path: 파일 경로 (.gxw 또는 .csv, export_gxworks2에서 반환된 file_path)
         auto_open: GX Works2 자동 실행 여부 (False면 수동 안내만 반환)
-        cpu_type: CPU 타입 (예: Q03UDE). None이면 config 기본값.
-        project_type: 프로젝트 타입 (simple/structured). None이면 config 기본값.
-        gxworks2_language: GX Works2 메뉴 언어 (ko/en/ja). None이면 config 기본값.
-        gxworks2_path: GX Works2 실행 파일 경로. None이면 자동 탐지.
 
     Returns:
         status (success/error/skipped), message, file_path, fallback (실패 시 수동 안내)
     """
-    return _import(file_path, auto_open, cpu_type, project_type, gxworks2_language, gxworks2_path)
+    return _import(file_path, auto_open)
 
 
 @mcp.tool()

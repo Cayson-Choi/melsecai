@@ -8,14 +8,8 @@ build/
 .pytest_cache/
 *.egg
 
-# Generated output files
-melseccode/*.gxw
-melseccode/*.csv
-melseccode/*.png
-melseccode/examplegxw/
-
-# Analysis/debug scripts
-hash_analysis.py
+# Generated output files (melseccode is runtime output directory)
+melseccode/
 
 # Large reference docs
 melsec-q-programming-manual/

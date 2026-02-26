@@ -4,7 +4,7 @@
 
 ## 개요
 
-타이밍도(Timing Diagram)에서 추출한 동작 조건을 입력받아 미쓰비시 MELSEC-Q 시리즈용 래더(Ladder) 프로그램을 자동 생성하고, **GX Works2에 자동으로 Import**하여 래더 편집 화면까지 원스톱으로 표시합니다.
+타이밍도(Timing Diagram)에서 추출한 동작 조건을 입력받아 미쓰비시 MELSEC-Q 시리즈용 래더(Ladder) 프로그램을 자동 생성하고, **CSV + UIA 자동화**를 통해 GX Works2 프로젝트(.gxw)까지 원스톱으로 생성합니다.
 
 ### 대상 사용자
 
@@ -25,15 +25,13 @@
    → 디바이스 할당 (X0, Y0, T0 등)
    → 니모닉 코드 생성 (LD X0 / OR M0 / ANI X1 / OUT M0...)
         ↓
-4. 텍스트 파일 저장
-   → D:\melsecai\melseccode\code.txt
+4. CSV 파일 생성
+   → GX Works2 CSV Import 형식 (UTF-16 LE, 탭 구분)
         ↓
-5. GX Works2 자동 실행 + Import
-   → pywinauto가 GX Works2를 열고
-   → 새 프로젝트 생성하고
-   → 텍스트 파일을 자동으로 Import
+5. UIA 자동화로 GX Works2에 Import
+   → 빈 프로젝트 열기 → [편집] → [CSV 파일에서 읽기] → 저장
         ↓
-6. GX Works2에 래더가 떠있음 ✅
+6. GX Works2에 래더가 떠있음
         ↓
 7. 사용자는 래더 확인하고 시뮬레이션 돌리면 끝
 ```
@@ -113,33 +111,19 @@ uv run melsec-ladder-mcp
 
 ### 3. `export_gxworks2`
 
-래더 프로그램을 IL 텍스트 파일로 **디스크에 저장**합니다.
+래더 프로그램을 GX Works2 파일로 저장합니다.
 
-- 기본 저장 경로: `D:\melsecai\melseccode\code.txt`
-- 디바이스 코멘트 CSV도 함께 저장: `comments.csv`
-- 반환값에 `file_path` 포함 → `import_to_gxworks2`에서 사용
+- `output_format="gxw"` (기본): CSV 생성 → UIA 자동화 → .gxw 프로젝트 생성
+- `output_format="csv"`: CSV 파일만 생성 (수동 Import용)
+- 기본 저장 경로: `D:\Antigravity\melsecai\melseccode\`
 
-### 4. `import_to_gxworks2` *(신규)*
+### 4. `import_to_gxworks2`
 
-**pywinauto**를 사용하여 GX Works2를 자동 조작합니다.
+생성된 파일을 GX Works2에 자동 Import합니다.
 
-```
-1) GX Works2 실행 중 → 기존 창 활성화 / 미실행 → 자동 실행
-2) 새 프로젝트 생성 (CPU: Q03UDE, Simple Project)
-3) 메뉴: 프로젝트 → 읽어들이기 → 텍스트 파일
-4) 파일 선택 다이얼로그에서 code.txt 자동 입력
-5) Import 완료 → 래더 편집 화면 표시
-```
-
-**자동 Import 실패 시:** 텍스트 파일 경로 + 수동 Import 안내를 fallback으로 반환합니다.
-
-**메뉴 언어 지원:**
-
-| 언어 | 메뉴 경로 |
-|------|-----------|
-| 한국어 (`ko`) | 프로젝트 → 읽어들이기 → 텍스트 파일 |
-| 영어 (`en`) | Project → Read from file → Text file |
-| 일본어 (`ja`) | プロジェクト → 読出し → テキストファイル |
+- `.gxw` 파일: `os.startfile()`로 직접 열기
+- `.csv` 파일: UIA 자동화로 GX Works2에 Import 후 .gxw 저장
+- 자동 Import 실패 시 수동 안내를 fallback으로 반환
 
 ### 5. `render_ladder_diagram`
 
@@ -163,7 +147,7 @@ gxworks2:
   language: "ko"
   default_cpu: "Q03UDE"
   default_project_type: "simple"
-  output_dir: "D:\\melsecai\\melseccode"
+  output_dir: "D:\\Antigravity\\melsecai\\melseccode"
   encoding: "shift-jis"
   timeouts:
     launch: 10
@@ -236,7 +220,7 @@ src/melsec_ladder_mcp/
 ├── tools/                     # MCP 도구 구현
 │   ├── analyzer.py            #   analyze_timing_diagram
 │   ├── generator.py           #   generate_ladder
-│   ├── exporter.py            #   export_gxworks2 (파일 저장)
+│   ├── exporter.py            #   export_gxworks2 (CSV/GXW 저장)
 │   ├── importer.py            #   import_to_gxworks2 (GX Works2 자동 Import)
 │   └── renderer.py            #   render_ladder_diagram
 ├── core/                      # 코어 엔진
@@ -252,12 +236,12 @@ src/melsec_ladder_mcp/
 │       ├── full_reset.py      #     전체 리셋
 │       └── flicker.py         #     플리커 점멸
 ├── automation/                # GX Works2 UI 자동화
-│   ├── gxworks2_controller.py #   pywinauto 기반 컨트롤러
-│   ├── menu_paths.py          #   메뉴 경로 정의 (한/영/일)
-│   ├── dialog_handlers.py     #   다이얼로그 핸들러
+│   ├── gxworks2_uia.py        #   UIA 백엔드 컨트롤러
 │   └── config.py              #   YAML 설정 로더
-├── formats/
-│   └── gxworks2.py            # GX Works2 텍스트 + CSV 포맷터
+└── formats/                   # GX Works2 포맷터
+    ├── gxworks2.py            #   IL 텍스트 포맷터
+    ├── csv_formatter.py       #   CSV 포맷터 (GX Works2 Import 형식)
+    └── template.gxw           #   템플릿 GXW (Q03UDV 빈 프로젝트)
 config/
 └── gxworks2_config.yaml       # GX Works2 환경 설정
 ```
@@ -267,8 +251,6 @@ config/
 ```bash
 uv run pytest -v
 ```
-
-**97개 테스트** — 모델, 옥탈 주소, 컴파일러, IL 검증, 패턴, GX Works2 포맷, 파일 저장, Import 도구, E2E 파이프라인
 
 ## 라이선스
 

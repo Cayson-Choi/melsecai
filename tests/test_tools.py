@@ -61,10 +61,14 @@ class TestExporter:
         assert "LD" in text
         assert "OUT" in text
 
-    def test_has_device_comments(self, practice_11_input):
+    def test_csv_export(self, practice_11_input):
+        import tempfile, os
         ladder = generate_ladder(**practice_11_input)
-        result = export_gxworks2(ladder, output_format="text")
-        assert result["device_comments_csv"] != ""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            out_path = os.path.join(tmpdir, "test.csv")
+            result = export_gxworks2(ladder, output_path=out_path, output_format="csv")
+            assert result["output_format"] == "csv"
+            assert os.path.isfile(out_path)
 
 
 class TestRenderer:

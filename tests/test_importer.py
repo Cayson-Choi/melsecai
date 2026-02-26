@@ -7,31 +7,6 @@ import pytest
 
 from melsec_ladder_mcp.tools.importer import import_to_gxworks2
 from melsec_ladder_mcp.automation.config import load_config
-from melsec_ladder_mcp.automation.menu_paths import MENU_PATHS, DEFAULT_INSTALL_PATHS
-
-
-class TestMenuPaths:
-    def test_ko_paths_defined(self):
-        assert "ko" in MENU_PATHS
-        ko = MENU_PATHS["ko"]
-        assert "new_project" in ko
-        assert "read_text" in ko
-        assert "dialog_open_title" in ko
-
-    def test_en_paths_defined(self):
-        assert "en" in MENU_PATHS
-
-    def test_ja_paths_defined(self):
-        assert "ja" in MENU_PATHS
-
-    def test_all_languages_have_same_keys(self):
-        keys = set(MENU_PATHS["ko"].keys())
-        assert set(MENU_PATHS["en"].keys()) == keys
-        assert set(MENU_PATHS["ja"].keys()) == keys
-
-    def test_default_install_paths(self):
-        assert len(DEFAULT_INSTALL_PATHS) >= 2
-        assert any("GPPW2" in p for p in DEFAULT_INSTALL_PATHS)
 
 
 class TestConfig:
@@ -50,66 +25,51 @@ class TestConfig:
 
 class TestImporterTool:
     def test_file_not_found(self):
-        result = import_to_gxworks2(file_path="/nonexistent/file.txt")
+        result = import_to_gxworks2(file_path="/nonexistent/file.csv")
         assert result["status"] == "error"
         assert result["error_type"] == "file_not_found"
 
-    def test_auto_open_false(self, tmp_path):
-        # Create a temp file
-        txt = tmp_path / "test.txt"
-        txt.write_text("LD X0\nOUT Y0\nEND")
+    def test_auto_open_false_csv(self, tmp_path):
+        csv = tmp_path / "test.csv"
+        csv.write_text("data")
         result = import_to_gxworks2(
-            file_path=str(txt),
+            file_path=str(csv),
             auto_open=False,
         )
         assert result["status"] == "skipped"
-        assert "수동" in result["message"]
-        assert result["file_path"] == str(txt)
+        assert "CSV" in result["message"]
+        assert result["file_path"] == str(csv)
 
-    def test_auto_open_with_missing_gxworks2(self, tmp_path):
-        """When GX Works2 exe doesn't exist, should return error with fallback."""
+    def test_auto_open_false_gxw(self, tmp_path):
+        gxw = tmp_path / "test.gxw"
+        gxw.write_text("data")
+        result = import_to_gxworks2(
+            file_path=str(gxw),
+            auto_open=False,
+        )
+        assert result["status"] == "skipped"
+        assert result["file_path"] == str(gxw)
+
+    def test_unsupported_format(self, tmp_path):
         txt = tmp_path / "test.txt"
         txt.write_text("LD X0\nOUT Y0\nEND")
-        result = import_to_gxworks2(
-            file_path=str(txt),
-            auto_open=True,
-            gxworks2_path="/nonexistent/gxw2.exe",
-        )
+        result = import_to_gxworks2(file_path=str(txt))
         assert result["status"] == "error"
-        assert "fallback" in result
-        assert "수동" in result["fallback"]
+        assert result["error_type"] == "unsupported_format"
 
 
 class TestExporterFileSave:
-    def test_export_saves_file(self, practice_11_input):
-        """Test that export_gxworks2 saves file to disk."""
+    def test_export_saves_csv_file(self, practice_11_input):
+        """Test that export_gxworks2 saves CSV file to disk."""
         from melsec_ladder_mcp.tools.generator import generate_ladder
         from melsec_ladder_mcp.tools.exporter import export_gxworks2
 
         ladder = generate_ladder(**practice_11_input)
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            out_path = os.path.join(tmpdir, "test_code.txt")
-            result = export_gxworks2(ladder, output_path=out_path, output_format="text")
+            out_path = os.path.join(tmpdir, "test_code.csv")
+            result = export_gxworks2(ladder, output_path=out_path, output_format="csv")
 
             assert result["file_path"] == out_path
             assert os.path.isfile(out_path)
-
-            with open(out_path, encoding="shift_jis") as f:
-                content = f.read()
-            assert content.strip().endswith("END")
-            assert "LD X0" in content
-
-    def test_export_saves_comments_csv(self, practice_11_input):
-        from melsec_ladder_mcp.tools.generator import generate_ladder
-        from melsec_ladder_mcp.tools.exporter import export_gxworks2
-
-        ladder = generate_ladder(**practice_11_input)
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            out_path = os.path.join(tmpdir, "test_code.txt")
-            result = export_gxworks2(ladder, output_path=out_path, output_format="text")
-
-            comments_path = result["comments_file_path"]
-            assert comments_path is not None
-            assert os.path.isfile(comments_path)
+            assert result["output_format"] == "csv"

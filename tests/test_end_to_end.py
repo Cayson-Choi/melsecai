@@ -62,13 +62,14 @@ class TestPractice11Pipeline:
             f"Actual:\n{program_text}"
         )
 
-    def test_device_comments_csv(self, practice_11_input):
+    def test_csv_export_format(self, practice_11_input):
+        import tempfile, os
         ladder = generate_ladder(**practice_11_input)
-        export = export_gxworks2(ladder, output_format="text")
-        csv = export["device_comments_csv"]
-        assert "X0" in csv
-        assert "X1" in csv
-        assert "Y0" in csv
+        with tempfile.TemporaryDirectory() as tmpdir:
+            out_path = os.path.join(tmpdir, "test.csv")
+            export = export_gxworks2(ladder, output_path=out_path, output_format="csv")
+            assert export["output_format"] == "csv"
+            assert os.path.isfile(out_path)
 
     def test_render_text(self, practice_11_input):
         ladder = generate_ladder(**practice_11_input)

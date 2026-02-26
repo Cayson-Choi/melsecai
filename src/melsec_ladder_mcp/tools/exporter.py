@@ -4,12 +4,9 @@ from __future__ import annotations
 
 import logging
 import os
-from pathlib import Path
 
 from melsec_ladder_mcp.automation.config import load_config
 from melsec_ladder_mcp.core.compiler import LadderCompiler
-from melsec_ladder_mcp.formats.gxworks2 import GXWorks2Formatter
-from melsec_ladder_mcp.models.export import ExportOptions, ProjectType, ExportEncoding
 from melsec_ladder_mcp.models.ladder import LadderProgram
 
 logger = logging.getLogger(__name__)
@@ -17,31 +14,26 @@ logger = logging.getLogger(__name__)
 
 def export_gxworks2(
     ladder: dict,
-    project_type: str = "simple",
-    encoding: str = "shift-jis",
     output_path: str | None = None,
     output_format: str = "gxw",
+    **_kwargs,
 ) -> dict:
     """Export ladder program to GX Works2 format and save to file.
 
     Args:
         ladder: 래더 프로그램 JSON (generate_ladder 출력)
-        project_type: 프로젝트 타입 (simple/structured)
-        encoding: 인코딩 (shift-jis/utf-8) — text 포맷에서만 사용
         output_path: 저장 경로 (None이면 config 기본 경로 사용)
-        output_format: 출력 포맷 ("gxw" = .gxw 프로젝트, "csv" = CSV만, "text" = IL 텍스트)
+        output_format: 출력 포맷 ("gxw" = .gxw 프로젝트, "csv" = CSV만)
 
     Returns:
         내보내기 결과 (program_text, file_path, warnings 등)
     """
     program = LadderProgram(**ladder)
 
-    if output_format == "gxw":
-        return _export_gxw(program, output_path)
-    elif output_format == "csv":
+    if output_format == "csv":
         return _export_csv(program, output_path)
     else:
-        return _export_text(program, project_type, encoding, output_path)
+        return _export_gxw(program, output_path)
 
 
 def _export_gxw(
@@ -144,41 +136,3 @@ def _export_csv(
         "instruction_count": len(sequence.instructions),
         "rung_count": len(program.rungs),
     }
-
-
-def _export_text(
-    program: LadderProgram,
-    project_type: str,
-    encoding: str,
-    output_path: str | None,
-) -> dict:
-    """Export as IL text file (legacy format)."""
-    options = ExportOptions(
-        project_type=ProjectType(project_type),
-        encoding=ExportEncoding(encoding),
-    )
-
-    formatter = GXWorks2Formatter()
-    result = formatter.format(program, options)
-
-    cfg = load_config()
-    output_dir = cfg["output_dir"]
-    if output_path is None:
-        output_path = os.path.join(output_dir, "code.txt")
-
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
-    file_encoding = "shift_jis" if encoding == "shift-jis" else "utf-8"
-    with open(output_path, "w", encoding=file_encoding) as f:
-        f.write(result.program_text)
-
-    comments_path = os.path.join(os.path.dirname(output_path), "comments.csv")
-    if result.device_comments_csv:
-        with open(comments_path, "w", encoding="utf-8-sig") as f:
-            f.write(result.device_comments_csv)
-
-    result_dict = result.model_dump()
-    result_dict["file_path"] = output_path
-    result_dict["comments_file_path"] = comments_path if result.device_comments_csv else None
-    result_dict["output_format"] = "text"
-    return result_dict
